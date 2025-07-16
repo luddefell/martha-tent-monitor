@@ -11,32 +11,26 @@
       --bg: #f9f9f9;
       --fg: #333;
       --card-bg: #fff;
-      --primary: #36a2eb;
-      --accent: #ff6384;
+      --temp-color: #36a2eb;      /* blue */
+      --hum-color:  #4bc0c0;      /* teal */
+      --co2-color:  #ff6384;      /* pink */
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --fg: #eee;
-        --card-bg: #1e1e1e;
-      }
+      :root { --bg: #121212; --fg: #eee; --card-bg: #1e1e1e; }
     }
     body {
       background: var(--bg);
       color: var(--fg);
       font-family: 'Inter', sans-serif;
       text-align: center;
-      margin: 0;
-      padding: 2rem;
+      margin: 0; padding: 2rem;
     }
-    h1 {
-      margin-bottom: 0.2em;
-    }
+    h1 { margin-bottom: 0.2em; }
+    #header-img { max-width: 100%; height: auto; margin-bottom: 1rem; }
     #lastUpdate {
       font-size: 0.9rem;
       color: var(--fg);
-      margin-top: 0;
-      margin-bottom: 1.5rem;
+      margin: 0 0 1.5rem;
     }
     #container {
       display: grid;
@@ -48,101 +42,99 @@
     .card {
       background: var(--card-bg);
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 1rem;
     }
-    .card h2 {
-      margin: 0;
-      font-size: 1.5rem;
-      color: var(--primary);
-    }
+    .card h2 { margin: 0; font-size: 1.5rem; }
     .card p {
       margin: 0.5rem 0 0;
-      color: var(--accent);
       font-weight: 600;
     }
-    canvas {
+    .chart-container {
       max-width: 800px;
-      margin: 0 auto;
-      display: block;
+      margin: 1rem auto;
     }
   </style>
 </head>
 <body>
+  <img id="header-img" src="mushrooms.png" alt="Mushroom varieties illustration">
   <h1>Mushroom Tent</h1>
   <p id="lastUpdate">Last update: --:--:--</p>
+
   <div id="container">
     <div class="card">
-      <h2 id="temp">--°F</h2><p>Temperature</p>
+      <h2 id="temp">--°F</h2><p style="color: var(--temp-color);">Temperature</p>
     </div>
     <div class="card">
-      <h2 id="hum">--%</h2><p>Humidity</p>
+      <h2 id="hum">--%</h2><p style="color: var(--hum-color);">Humidity</p>
     </div>
     <div class="card">
-      <h2 id="co2">-- ppm</h2><p>CO₂</p>
+      <h2 id="co2">-- ppm</h2><p style="color: var(--co2-color);">CO₂</p>
     </div>
   </div>
-  <canvas id="trendChart" height="200"></canvas>
+
+  <div class="chart-container">
+    <canvas id="tempChart" height="200"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="humChart" height="200"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="co2Chart" height="200"></canvas>
+  </div>
+
   <script>
-    const CH_ID = '3010661';
-    const READ_KEY = 'HSXTOQICT6DGB00V';
+    const CH_ID   = 'YOUR_CHANNEL_ID';
+    const READ_KEY= 'YOUR_READ_API_KEY';
 
     async function fetchData() {
       const url = `https://api.thingspeak.com/channels/${CH_ID}/feeds.json?api_key=${READ_KEY}&results=1`;
-      try {
-        const res = await fetch(url);
-        const json = await res.json();
-        const f = json.feeds[0];
-        document.getElementById('temp').textContent = `${(+f.field1).toFixed(1)}°F`;
-        document.getElementById('hum').textContent  = `${(+f.field2).toFixed(0)}%`;
-        document.getElementById('co2').textContent  = `${f.field3} ppm`;
-        document.getElementById('lastUpdate').textContent =
-          `Last update: ${new Date().toLocaleTimeString()}`;
-      } catch (e) {
-        console.error('Fetch error:', e);
-      }
+      const res = await fetch(url);
+      const json = await res.json();
+      const f = json.feeds[0];
+      document.getElementById('temp').textContent = `${(+f.field1).toFixed(1)}°F`;
+      document.getElementById('hum') .textContent = `${(+f.field2).toFixed(0)}%`;
+      document.getElementById('co2') .textContent = `${f.field3} ppm`;
+      document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
     }
 
-    let chart;
-    async function setupChart() {
-      const ctx = document.getElementById('trendChart').getContext('2d');
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            { label: 'CO₂ (ppm)', data: [], borderColor: 'var(--accent)', fill: false },
-            { label: 'Temp (°F)', data: [], borderColor: 'var(--primary)', fill: false },
-            { label: 'Hum (%)', data: [], borderColor: '#4bc0c0', fill: false },
-          ]
-        },
-        options: {
-          scales: { x: { display: false } },
-          plugins: { legend: { position: 'bottom' } }
-        }
+    let tempChart, humChart, co2Chart;
+    async function setupCharts() {
+      // Temperature Chart
+      const tCtx = document.getElementById('tempChart').getContext('2d');
+      tempChart = new Chart(tCtx, {
+        type: 'line', data: { labels: [], datasets: [{ label: 'Temp (°F)', data: [], borderColor: 'var(--temp-color)', fill: false }] },
+        options: { scales: { x: { display: false }}, plugins: { legend: { display: false } }}
+      });
+      // Humidity Chart
+      const hCtx = document.getElementById('humChart').getContext('2d');
+      humChart = new Chart(hCtx, {
+        type: 'line', data: { labels: [], datasets: [{ label: 'Humidity (%)', data: [], borderColor: 'var(--hum-color)', fill: false }] },
+        options: { scales: { x: { display: false }}, plugins: { legend: { display: false } }}
+      });
+      // CO2 Chart
+      const cCtx = document.getElementById('co2Chart').getContext('2d');
+      co2Chart = new Chart(cCtx, {
+        type: 'line', data: { labels: [], datasets: [{ label: 'CO₂ (ppm)', data: [], borderColor: 'var(--co2-color)', fill: false }] },
+        options: { scales: { x: { display: false }}, plugins: { legend: { display: false } }}
       });
     }
 
     async function fetchTrend() {
       const url = `https://api.thingspeak.com/channels/${CH_ID}/feeds.json?api_key=${READ_KEY}&results=50`;
-      try {
-        const res = await fetch(url);
-        const json = await res.json();
-        const times = json.feeds.map(f => f.created_at.substr(11, 5));
-        chart.data.labels = times;
-        chart.data.datasets[0].data = json.feeds.map(f => +f.field3);
-        chart.data.datasets[1].data = json.feeds.map(f => +f.field1);
-        chart.data.datasets[2].data = json.feeds.map(f => +f.field2);
-        chart.update();
-      } catch (e) {
-        console.error('Trend fetch error:', e);
-      }
+      const res = await fetch(url);
+      const json = await res.json();
+      const times = json.feeds.map(f => f.created_at.substr(11,5));
+      tempChart.data.labels = humChart.data.labels = co2Chart.data.labels = times;
+      tempChart.data.datasets[0].data = json.feeds.map(f => +f.field1);
+      humChart.data.datasets[0].data  = json.feeds.map(f => +f.field2);
+      co2Chart.data.datasets[0].data  = json.feeds.map(f => +f.field3);
+      tempChart.update(); humChart.update(); co2Chart.update();
     }
 
     window.onload = async () => {
-      await setupChart();
-      fetchData();
-      fetchTrend();
+      await setupCharts();
+      fetchData(); fetchTrend();
       setInterval(() => { fetchData(); fetchTrend(); }, 20000);
     };
   </script>
