@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mushroom Tent Dashboard</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    #data { font-size: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Mushroom Tent</h1>
+  <div id="data">Loading…</div>
+  <script>
+    const CH_ID = 'YOUR_CHANNEL_ID';
+    const READ_KEY = 'YOUR_READ_API_KEY';
+    async function fetchData() {
+      const url = `https://api.thingspeak.com/channels/${CH_ID}/feeds.json?api_key=${READ_KEY}&results=1`;
+      const res = await fetch(url);
+      const json = await res.json();
+      const f = json.feeds[0];
+      document.getElementById('data').textContent =
+        `T:${(+f.field1).toFixed(1)}°F  H:${(+f.field2).toFixed(0)}%  CO₂:${f.field3}ppm`;
+    }
+    setInterval(fetchData, 20000);
+    fetchData();
+  </script>
+</body>
+</html>
