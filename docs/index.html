@@ -11,16 +11,10 @@
       --bg: #f9f9f9;
       --fg: #333;
       --card-bg: #fff;
-      --temp-color: #36a2eb;
-      --hum-color:  #4bc0c0;
-      --co2-color:  #ff6384;
+      --line-color: #fff;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --fg: #eee;
-        --card-bg: #1e1e1e;
-      }
+      :root { --bg: #121212; --fg: #eee; --card-bg: #1e1e1e; }
     }
     body {
       background: var(--bg);
@@ -30,7 +24,6 @@
       padding: 2rem;
       text-align: center;
     }
-    h1 { margin: 0.5rem 0; }
     #header-img {
       width: 100%;
       max-width: 800px;
@@ -38,68 +31,29 @@
       display: block;
       margin: 0 auto 1rem;
     }
-    #lastUpdate {
-      font-size: 0.9rem;
-      margin-bottom: 1.5rem;
-    }
-    #container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      max-width: 800px;
-      margin: 0 auto 2rem;
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 1rem;
-    }
+    h1 { margin: 0.5rem 0; }
+    #lastUpdate { font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .cards { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .card { background: var(--card-bg); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1rem; width: 200px; }
     .card h2 { margin: 0; font-size: 1.5rem; }
     .card p { margin: 0.5rem 0 0; font-weight: 600; }
-    #charts {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-    .chart-container {
-      flex: 1 1 300px;
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .chart-container canvas {
-      width: 100% !important;
-      height: 200px !important;
-    }
+    .charts { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+    .chart-container { background: var(--card-bg); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex: 1 1 300px; }
+    .chart-container canvas { width: 100% !important; height: 200px !important; }
   </style>
 </head>
 <body>
-  <!-- Replace mushrooms.png with your image file in docs/ -->
-  <img id="header-img" src="mushrooms.png" alt="Mushroom varieties illustration">
+  <img id="header-img" src="mushrooms.png" alt="" onerror="this.style.display='none'">
   <h1>Mushroom Tent Monitor</h1>
   <p id="lastUpdate">Last update: --:--:--</p>
 
-  <div id="container">
-    <div class="card">
-      <h2 id="temp">--°F</h2>
-      <p style="color: var(--temp-color);">Temperature</p>
-    </div>
-    <div class="card">
-      <h2 id="hum">--%</h2>
-      <p style="color: var(--hum-color);">Humidity</p>
-    </div>
-    <div class="card">
-      <h2 id="co2">-- ppm</h2>
-      <p style="color: var(--co2-color);">CO₂</p>
-    </div>
+  <div class="cards">
+    <div class="card"><h2 id="temp">--°F</h2><p>Temperature</p></div>
+    <div class="card"><h2 id="hum">--%</h2><p>Humidity</p></div>
+    <div class="card"><h2 id="co2">-- ppm</h2><p>CO₂</p></div>
   </div>
 
-  <div id="charts">
+  <div class="charts">
     <div class="chart-container"><canvas id="tempChart"></canvas></div>
     <div class="chart-container"><canvas id="humChart"></canvas></div>
     <div class="chart-container"><canvas id="co2Chart"></canvas></div>
@@ -111,53 +65,54 @@
 
     async function fetchData() {
       const url = `https://api.thingspeak.com/channels/${CH_ID}/feeds.json?api_key=${READ_KEY}&results=1`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const f = data.feeds[0];
-        document.getElementById('temp').textContent = `${(+f.field1).toFixed(1)}°F`;
-        document.getElementById('hum') .textContent = `${(+f.field2).toFixed(0)}%`;
-        document.getElementById('co2') .textContent = `${f.field3} ppm`;
-        document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
-      } catch (e) {
-        console.error('Fetch error', e);
-      }
+      const res = await fetch(url);
+      const data = await res.json();
+      const f = data.feeds[0];
+      document.getElementById('temp').textContent = `${(+f.field1).toFixed(1)}°F`;
+      document.getElementById('hum').textContent  = `${(+f.field2).toFixed(0)}%`;
+      document.getElementById('co2').textContent  = `${f.field3} ppm`;
+      document.getElementById('lastUpdate').textContent =
+        `Last update: ${new Date().toLocaleTimeString()}`;
     }
 
-    function chartOptions(color) {
+    function chartConfig() {
       return {
-        scales: {
-          x: { display: true, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--fg') } },
-          y: { display: true, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--fg') } }
-        },
-        plugins: { legend: { display: false } },
-        elements: { line: { borderColor: color }, point: { radius: 0 } }
+        type: 'line',
+        data: { labels: [], datasets: [{ data: [], borderColor: 'var(--line-color)', fill: false }] },
+        options: {
+          scales: {
+            x: { display: true, ticks: { color: 'var(--fg)' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+            y: { display: true, ticks: { color: 'var(--fg)' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+          },
+          plugins: { legend: { display: false } },
+          elements: { point: { radius: 0 } }
+        }
       };
     }
 
-    let tempChart, humChart, co2Chart;
+    let charts = {};
     async function setupCharts() {
-      tempChart = new Chart(document.getElementById('tempChart'), { type: 'line', data: { labels: [], datasets: [{ data: [] }] }, options: chartOptions('var(--temp-color)') });
-      humChart  = new Chart(document.getElementById('humChart'),  { type: 'line', data: { labels: [], datasets: [{ data: [] }] }, options: chartOptions('var(--hum-color)') });
-      co2Chart  = new Chart(document.getElementById('co2Chart'),  { type: 'line', data: { labels: [], datasets: [{ data: [] }] }, options: chartOptions('var(--co2-color)') });
+      charts.temp = new Chart(
+        document.getElementById('tempChart'), chartConfig()
+      );
+      charts.hum  = new Chart(
+        document.getElementById('humChart'),  chartConfig()
+      );
+      charts.co2  = new Chart(
+        document.getElementById('co2Chart'),  chartConfig()
+      );
     }
 
     async function fetchTrend() {
       const url = `https://api.thingspeak.com/channels/${CH_ID}/feeds.json?api_key=${READ_KEY}&results=50`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const times = data.feeds.map(f => f.created_at.substr(11,5));
-        tempChart.data.labels = times;
-        humChart.data.labels  = times;
-        co2Chart.data.labels  = times;
-        tempChart.data.datasets[0].data = data.feeds.map(f => +f.field1);
-        humChart.data.datasets[0].data  = data.feeds.map(f => +f.field2);
-        co2Chart.data.datasets[0].data  = data.feeds.map(f => +f.field3);
-        tempChart.update(); humChart.update(); co2Chart.update();
-      } catch (e) {
-        console.error('Trend error', e);
-      }
+      const res = await fetch(url);
+      const data = await res.json();
+      const times = data.feeds.map(f => f.created_at.substr(11,5));
+      charts.temp.data.labels = charts.hum.data.labels = charts.co2.data.labels = times;
+      charts.temp.data.datasets[0].data = data.feeds.map(f => +f.field1);
+      charts.hum.data.datasets[0].data  = data.feeds.map(f => +f.field2);
+      charts.co2.data.datasets[0].data  = data.feeds.map(f => +f.field3);
+      charts.temp.update(); charts.hum.update(); charts.co2.update();
     }
 
     window.onload = async () => {
