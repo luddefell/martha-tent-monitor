@@ -123,6 +123,11 @@ Contributions are welcome:
 - Ensure code follows existing style and includes comments.
 - Add documentation or tests for new functionality.
 
+## Contributors
+
+- [luddefell](https://github.com/luddefell)
+- [a-vides](https://github.com/a-vides)
+
 ## License
 
 This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
