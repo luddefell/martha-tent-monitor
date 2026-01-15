@@ -2,6 +2,9 @@
 
 > **ESP32-powered environmental control system** for King Oyster & Lion’s Mane mushroom cultivation, maintaining optimal temperature, humidity, and CO₂ levels automatically.
 
+<img width="596" height="680" alt="Screenshot 2026-01-14 at 11 28 05 PM" src="https://github.com/user-attachments/assets/a0b641c4-1cb4-4d79-9c90-f0a89bbd3486" />
+
+
 ## Contents
 
 - [Overview](#overview)
